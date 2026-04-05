@@ -621,8 +621,71 @@
     50% { transform: rotate(15deg); }
   }
 
-  /* Hidden YouTube iframe */
-  #yt-frame { display: none; }
+  /* ===== POLAROID PHOTO (HERO) ===== */
+  .polaroid-wrap {
+    margin-bottom: 1.5rem;
+    animation: fadeInUp 0.7s ease both, polaroidFloat 4s ease-in-out infinite;
+    animation-delay: 0s, 0.7s;
+  }
+  @keyframes polaroidFloat {
+    0%, 100% { transform: rotate(-3deg) translateY(0px); }
+    50%       { transform: rotate(-3deg) translateY(-10px); }
+  }
+  .polaroid {
+    background: #fff;
+    padding: 10px 10px 36px 10px;
+    border-radius: 3px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(255,110,180,0.25);
+    display: inline-block;
+    transform: rotate(-3deg);
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    cursor: pointer;
+    width: clamp(160px, 36vw, 220px);
+  }
+  .polaroid:hover {
+    transform: rotate(0deg) scale(1.06);
+  }
+  .polaroid-img-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #ede8f0;
+    overflow: hidden;
+    position: relative;
+    border-radius: 1px;
+  }
+  .polaroid-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .polaroid-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: linear-gradient(135deg, #f9e4f0, #ede8f0);
+  }
+  .polaroid-placeholder span { font-size: 2rem; }
+  .polaroid-placeholder p { font-size: 0.65rem; color: #b89ab5; text-align: center; padding: 0 0.5rem; font-family: 'DM Sans', sans-serif; }
+  .polaroid-label {
+    margin-top: 6px;
+    font-family: 'Caveat', 'Segoe UI', cursive, sans-serif;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    color: #555;
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+  .polaroid input[type=file] { display: none; }
+  .polaroid-hint {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.3);
+    margin-top: 0.4rem;
+    letter-spacing: 0.05em;
+  }
 </style>
 </head>
 <body>
@@ -645,6 +708,23 @@
 <!-- ===== HERO ===== -->
 <section id="hero">
   <span class="cake-emoji">🎂</span>
+
+  <!-- POLAROID PHOTO — click to add her picture -->
+  <div class="polaroid-wrap">
+    <div class="polaroid" onclick="document.getElementById('polaroid-file').click()">
+      <div class="polaroid-img-wrap">
+        <div class="polaroid-placeholder" id="polaroid-placeholder">
+          <span>🌸</span>
+          <p>Click to add<br>her photo</p>
+        </div>
+        <img id="polaroid-img" alt="Anchal Nayak">
+      </div>
+      <div class="polaroid-label">Anchal 💕</div>
+      <input type="file" id="polaroid-file" accept="image/*">
+    </div>
+    <p class="polaroid-hint">📷 click the frame to add her photo</p>
+  </div>
+
   <p class="hero-eyebrow">Today is all about you ✨</p>
   <h1 class="hero-name">Anchal Nayak</h1>
   <p class="hero-subtitle">May this day be as bright and beautiful as you are 💖</p>
@@ -738,8 +818,35 @@
   </button>
 </div>
 
-<!-- Hidden YouTube iframe for audio -->
-<iframe id="yt-frame" allow="autoplay" style="display:none;"></iframe>
+<!-- YouTube iframe — must NOT be display:none for the API to work -->
+<iframe id="yt-frame" allow="autoplay"
+  style="position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0;pointer-events:none;border:none;z-index:-1;"></iframe>
+
+<!-- Tap-to-start overlay (shows on first visit) -->
+<div id="music-splash" style="
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(13,7,32,0.92);
+  backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:1rem;cursor:pointer;
+  animation:fadeIn 0.5s ease;
+" onclick="dismissSplash()">
+  <div style="font-size:clamp(3rem,12vw,6rem);animation:cakeBounce 2s ease-in-out infinite;">🎂</div>
+  <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;
+    background:linear-gradient(90deg,#ff6eb4,#ffd700,#a78bfa);-webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;background-clip:text;text-align:center;padding:0 1rem;">
+    Happy Birthday Anchal! 🎉
+  </h2>
+  <p style="color:rgba(255,255,255,0.6);font-size:clamp(0.9rem,3vw,1.1rem);text-align:center;padding:0 1.5rem;">
+    Tap anywhere to enter &amp; start the music 🎵
+  </p>
+  <div style="margin-top:0.5rem;padding:0.75rem 2rem;border-radius:50px;
+    background:linear-gradient(135deg,#ff6eb4,#a78bfa);
+    color:#fff;font-weight:600;font-size:1rem;letter-spacing:0.05em;">
+    ✨ Enter ✨
+  </div>
+</div>
 
 <!-- ===== FOOTER ===== -->
 <footer>
@@ -753,9 +860,8 @@
    🎨 CONFIGURATION — Edit everything here easily!
 ==================================================== */
 
-/* ✏️ Birthday date — format: YYYY, MM (0-based), DD */
-const BIRTHDAY = { year: new Date().getFullYear(), month: new Date().getMonth(), day: new Date().getDate() + 1 };
-// Set to actual birthday, e.g.: { year: 2025, month: 3, day: 15 } for April 15
+/* ✏️ Birthday date — month is 0-based (0=Jan, 3=Apr) */
+const BIRTHDAY = { year: 2003, month: 3, day: 6 }; // April 6, 2003
 
 /* ✏️ Photo slot labels */
 const PHOTO_LABELS = [
@@ -982,10 +1088,8 @@ PLAYLIST.forEach((t, i) => {
 
 /* ===== MUSIC PLAYER ===== */
 /*
-  ✏️ HOW TO ADD YOUR OWN SONGS:
-  Replace the videoId values below with any YouTube video ID.
-  The video ID is the part after "v=" in a YouTube URL.
-  Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ → videoId: 'dQw4w9WgXcQ'
+  ✏️ HOW TO CHANGE SONGS:
+  Replace videoId with any YouTube video ID (the part after v= in the URL)
 */
 const BG_TRACKS = [
   { title: 'Birthday',       artist: 'Katy Perry',       videoId: '5NPBIwQyPWE' },
@@ -1000,82 +1104,89 @@ let isPlaying = false;
 let ytPlayer = null;
 let progressTimer = null;
 let panelOpen = false;
+let ytReady = false;
+let ytReadyCallbacks = [];
 
-function togglePanel() {
-  panelOpen = !panelOpen;
-  const panel = document.getElementById('music-panel');
-  panel.classList.toggle('open', panelOpen);
-  if (panelOpen && !isPlaying) startMusic();
+/* Load YouTube IFrame API once */
+(function loadYTAPI() {
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+
+window.onYouTubeIframeAPIReady = function () {
+  ytReady = true;
+  ytReadyCallbacks.forEach(fn => fn());
+  ytReadyCallbacks = [];
+};
+
+function whenYTReady(fn) {
+  if (ytReady) fn(); else ytReadyCallbacks.push(fn);
 }
 
-function loadYT() {
-  return new Promise(resolve => {
-    if (window.YT && window.YT.Player) { resolve(); return; }
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-    window.onYouTubeIframeAPIReady = resolve;
-  });
+/* Splash dismiss — triggers music start */
+function dismissSplash() {
+  const splash = document.getElementById('music-splash');
+  splash.style.transition = 'opacity 0.5s';
+  splash.style.opacity = '0';
+  setTimeout(() => splash.remove(), 500);
+  /* Open player panel and start music */
+  panelOpen = true;
+  document.getElementById('music-panel').classList.add('open');
+  whenYTReady(createPlayer);
 }
 
-async function startMusic() {
-  await loadYT();
-  const track = BG_TRACKS[currentTrack];
+function createPlayer() {
+  if (ytPlayer) return;
   updateTrackInfo();
-  if (ytPlayer) {
-    ytPlayer.loadVideoById(track.videoId);
-    ytPlayer.setVolume(document.getElementById('mp-vol').value);
-    return;
-  }
   ytPlayer = new YT.Player('yt-frame', {
-    height: '1', width: '1',
-    videoId: track.videoId,
-    playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1 },
+    videoId: BG_TRACKS[currentTrack].videoId,
+    playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1 },
     events: {
-      onReady: e => {
-        e.target.setVolume(document.getElementById('mp-vol').value);
+      onReady: function(e) {
+        e.target.setVolume(parseInt(document.getElementById('mp-vol').value, 10));
         e.target.playVideo();
-        isPlaying = true;
-        updatePlayBtn();
-        startProgress();
       },
-      onStateChange: e => {
-        if (e.data === YT.PlayerState.ENDED) nextTrack();
-        isPlaying = e.data === YT.PlayerState.PLAYING;
-        updatePlayBtn();
+      onStateChange: function(e) {
+        if (e.data === YT.PlayerState.PLAYING) {
+          isPlaying = true; updatePlayBtn(); startProgress();
+        } else if (e.data === YT.PlayerState.PAUSED) {
+          isPlaying = false; updatePlayBtn(); clearInterval(progressTimer);
+        } else if (e.data === YT.PlayerState.ENDED) {
+          nextTrack();
+        }
       }
     }
   });
 }
 
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('music-panel').classList.toggle('open', panelOpen);
+}
+
 function togglePlay() {
-  if (!ytPlayer) { startMusic(); return; }
-  if (isPlaying) { ytPlayer.pauseVideo(); clearInterval(progressTimer); }
-  else { ytPlayer.playVideo(); startProgress(); }
-  isPlaying = !isPlaying;
-  updatePlayBtn();
+  if (!ytPlayer) return;
+  if (isPlaying) { ytPlayer.pauseVideo(); }
+  else { ytPlayer.playVideo(); }
 }
 
 function nextTrack() {
   currentTrack = (currentTrack + 1) % BG_TRACKS.length;
   updateTrackInfo();
-  if (ytPlayer) ytPlayer.loadVideoById(BG_TRACKS[currentTrack].videoId);
-  else startMusic();
   document.getElementById('mp-progress').style.width = '0%';
-  startProgress();
+  if (ytPlayer) ytPlayer.loadVideoById(BG_TRACKS[currentTrack].videoId);
 }
 
 function prevTrack() {
   currentTrack = (currentTrack - 1 + BG_TRACKS.length) % BG_TRACKS.length;
   updateTrackInfo();
-  if (ytPlayer) ytPlayer.loadVideoById(BG_TRACKS[currentTrack].videoId);
-  else startMusic();
   document.getElementById('mp-progress').style.width = '0%';
-  startProgress();
+  if (ytPlayer) ytPlayer.loadVideoById(BG_TRACKS[currentTrack].videoId);
 }
 
 function setVolume(v) {
-  if (ytPlayer) ytPlayer.setVolume(v);
+  if (ytPlayer) ytPlayer.setVolume(parseInt(v, 10));
 }
 
 function updateTrackInfo() {
@@ -1090,7 +1201,7 @@ function updatePlayBtn() {
 function startProgress() {
   clearInterval(progressTimer);
   progressTimer = setInterval(() => {
-    if (!ytPlayer || !ytPlayer.getDuration) return;
+    if (!ytPlayer || typeof ytPlayer.getDuration !== 'function') return;
     const dur = ytPlayer.getDuration();
     const cur = ytPlayer.getCurrentTime();
     if (dur > 0) {
@@ -1098,6 +1209,20 @@ function startProgress() {
     }
   }, 1000);
 }
+
+/* ===== POLAROID HERO PHOTO ===== */
+document.getElementById('polaroid-file').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById('polaroid-img');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    document.getElementById('polaroid-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
 
 /* ===== SCROLL REVEAL ===== */
 const observer = new IntersectionObserver(entries => {
