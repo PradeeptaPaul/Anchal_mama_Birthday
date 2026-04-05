@@ -680,16 +680,18 @@ PHOTO_LABELS.forEach(({i,l},idx)=>{
   const hardcoded = GRID_PHOTOS[idx];
   if(hardcoded){
     const imgEl=document.getElementById(`pi${idx}`);
-    imgEl.src=hardcoded;
-    imgEl.style.display='block';
+    imgEl.onload=()=>{
+      imgEl.style.display='block';
+      s.querySelector('.pi').style.display='none';
+      s.querySelector('.pl').style.display='none';
+      s.classList.add('has-photo');
+    };
     imgEl.onerror=()=>{
-      imgEl.style.display='none'; /* show placeholder if file missing */
+      imgEl.style.display='none';
       s.querySelector('.pi').style.display='';
       s.querySelector('.pl').style.display='';
     };
-    s.querySelector('.pi').style.display='none';
-    s.querySelector('.pl').style.display='none';
-    s.classList.add('has-photo');
+    imgEl.src=hardcoded;
   }
 
   /* Still allow clicking to replace with a new photo */
