@@ -546,8 +546,10 @@ footer{
   <button id="mptog" onclick="togglePanel()"><span class="nspin">🎵</span></button>
 </div>
 
-<!-- HTML5 Audio -->
-<audio id="bg-audio" preload="auto"></audio>
+<!-- Hidden YouTube Player -->
+<div id="yt-player-wrap" style="position:fixed;bottom:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;pointer-events:none;z-index:-1">
+  <div id="yt-player"></div>
+</div>
 
 <!-- FOOTER -->
 <footer>
@@ -585,11 +587,10 @@ const PLAYLIST = [
   {e:'🌈',t:'Shake It Off',a:'Taylor Swift',l:'https://www.youtube.com/results?search_query=Taylor+Swift+Shake+It+Off'},
 ];
 
-/* ✏️ Replace src with your mp3 file paths e.g. "music/song.mp3" */
+/* YouTube background audio */
+const YT_VIDEO_ID = 'nAw2ooeubSQ';
 const BG_TRACKS = [
-  {t:'Happy Birthday Jazz',a:'Royalty Free',src:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'},
-  {t:'Celebration Vibes',  a:'Royalty Free',src:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'},
-  {t:'Feel Good Beat',     a:'Royalty Free',src:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'},
+  {t:'Background Music',a:'YouTube 🎵',src:''},
 ];
 
 /* =============================================
@@ -735,45 +736,79 @@ PLAYLIST.forEach(({e,t,a,l},i)=>{
 });
 
 /* =============================================
-   MUSIC PLAYER (HTML5 Audio)
+   MUSIC PLAYER (YouTube IFrame API)
 ============================================= */
-const audio=document.getElementById('bg-audio');
-let curTrk=0,isPlaying=false,panelOpen=false;
-audio.src=BG_TRACKS[0].src;audio.volume=0.6;
-audio.addEventListener('ended',nextTrack);
-audio.addEventListener('timeupdate',()=>{
-  if(!audio.duration)return;
-  document.getElementById('mp-progress').style.width=(audio.currentTime/audio.duration*100).toFixed(1)+'%';
-});
+let ytPlayer=null,isPlaying=false,panelOpen=false,ytReady=false;
+
+/* Load YouTube IFrame API */
+(function(){
+  const tag=document.createElement('script');
+  tag.src='https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+
+/* Called automatically by YouTube API when ready */
+function onYouTubeIframeAPIReady(){
+  ytPlayer=new YT.Player('yt-player',{
+    videoId: YT_VIDEO_ID,
+    playerVars:{
+      autoplay:0,
+      controls:0,
+      loop:1,
+      playlist: YT_VIDEO_ID,
+      rel:0,
+      modestbranding:1,
+      playsinline:1,
+    },
+    events:{
+      onReady: function(e){
+        ytReady=true;
+        e.target.setVolume(60);
+        updateTrkInfo();
+      },
+      onStateChange: function(e){
+        isPlaying=(e.data===YT.PlayerState.PLAYING);
+        updatePlayBtn();
+        /* update progress bar */
+        if(isPlaying) startProgressUpdater();
+      }
+    }
+  });
+}
+
+let _progTimer=null;
+function startProgressUpdater(){
+  clearInterval(_progTimer);
+  _progTimer=setInterval(()=>{
+    if(!ytPlayer||!ytReady) return;
+    const dur=ytPlayer.getDuration();
+    const cur=ytPlayer.getCurrentTime();
+    if(dur>0) document.getElementById('mp-progress').style.width=(cur/dur*100).toFixed(1)+'%';
+    if(!isPlaying) clearInterval(_progTimer);
+  },500);
+}
+
 function playAudio(){
-  audio.src=BG_TRACKS[curTrk].src;
-  audio.volume=document.getElementById('mp-vol').value/100;
+  if(!ytReady){setTimeout(playAudio,400);return;}
+  ytPlayer.setVolume(document.getElementById('mp-vol').value);
+  ytPlayer.playVideo();
   updateTrkInfo();
-  audio.play().then(()=>{isPlaying=true;updatePlayBtn();}).catch(()=>{});
 }
 function togglePanel(){
   panelOpen=!panelOpen;
   document.getElementById('mpanel').classList.toggle('open',panelOpen);
 }
 function togglePlay(){
-  if(isPlaying){audio.pause();isPlaying=false;}
-  else{audio.play().then(()=>{isPlaying=true;updatePlayBtn();}).catch(()=>{});}
-  updatePlayBtn();
+  if(!ytReady) return;
+  if(isPlaying){ytPlayer.pauseVideo();}
+  else{ytPlayer.playVideo();}
 }
-function nextTrack(){
-  curTrk=(curTrk+1)%BG_TRACKS.length;
-  document.getElementById('mp-progress').style.width='0%';
-  playAudio();
-}
-function prevTrack(){
-  curTrk=(curTrk-1+BG_TRACKS.length)%BG_TRACKS.length;
-  document.getElementById('mp-progress').style.width='0%';
-  playAudio();
-}
-function setVolume(v){audio.volume=v/100;}
+function nextTrack(){ if(ytReady) ytPlayer.seekTo(0); }
+function prevTrack(){ if(ytReady) ytPlayer.seekTo(0); }
+function setVolume(v){ if(ytReady) ytPlayer.setVolume(v); }
 function updateTrkInfo(){
-  document.getElementById('mp-title').textContent=BG_TRACKS[curTrk].t;
-  document.getElementById('mp-artist').textContent=BG_TRACKS[curTrk].a+' 🎵';
+  document.getElementById('mp-title').textContent='Background Music';
+  document.getElementById('mp-artist').textContent='YouTube 🎵';
 }
 function updatePlayBtn(){
   document.getElementById('mp-play-btn').textContent=isPlaying?'⏸':'▶';
